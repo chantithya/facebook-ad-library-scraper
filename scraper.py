@@ -58,24 +58,10 @@ seen_ids = set()
 count = 0
 
 # Each ad = container around Library ID
-# ads = driver.find_elements(By.XPATH, "//span[contains(text(),'Library ID')]/ancestor::div[5]")
-# ads = driver.find_elements(By.XPATH, "//span[contains(text(),'Library ID')]/ancestor::div[8]")
-
-# print("Ads found:", len(ads))
-
-
-# ads = driver.find_elements(By.XPATH, "//span[contains(text(),'Library ID')]")
 ads = driver.find_elements(
     By.XPATH,
     "//span[contains(text(),'Library ID')]/ancestor::div[@class='xh8yej3']"
 )
-
-# for i in range(len(ads)):
-#     try:
-#         ads = driver.find_elements(By.XPATH, "//span[contains(text(),'Library ID')]")
-#         ad = ads[i]
-#     except:
-#         pass
 
 for ad in ads:
     try:
