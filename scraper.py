@@ -64,21 +64,28 @@ count = 0
 # print("Ads found:", len(ads))
 
 
-ads = driver.find_elements(By.XPATH, "//span[contains(text(),'Library ID')]")
+# ads = driver.find_elements(By.XPATH, "//span[contains(text(),'Library ID')]")
+ads = driver.find_elements(
+    By.XPATH,
+    "//span[contains(text(),'Library ID')]/ancestor::div[@class='xh8yej3']"
+)
 
-for i in range(len(ads)):
-    try:
-        ads = driver.find_elements(By.XPATH, "//span[contains(text(),'Library ID')]")
-        ad = ads[i]
-    except:
-        pass
+# for i in range(len(ads)):
+#     try:
+#         ads = driver.find_elements(By.XPATH, "//span[contains(text(),'Library ID')]")
+#         ad = ads[i]
+#     except:
+#         pass
 
 for ad in ads:
     try:
         # -------------------------
         # LIBRARY ID (anchor)
         # -------------------------
-        library_text = ad.find_element(By.XPATH, ".//span[contains(text(),'Library ID')]").text
+        library_text = ad.find_element(
+            By.XPATH, ".//span[contains(text(),'Library ID')]"
+        ).text
+
         library_id = library_text.replace("Library ID:", "").strip()
 
         if library_id in seen_ids:
@@ -113,24 +120,13 @@ for ad in ads:
         # -------------------------
         # PAGE NAME (BEST FIX)
         # -------------------------
-        page_name = ""
         try:
-            # First try span text
-            spans = ad.find_elements(By.XPATH, ".//span")
-
-            for s in spans:
-                txt = s.text.strip()
-                if "Slot" in txt or "Casino" in txt:
-                    page_name = txt
-                    break
-
-            # fallback
-            if not page_name:
-                img = ad.find_element(By.XPATH, ".//img[@alt]")
-                page_name = img.get_attribute("alt")
-
+            page_name = ad.find_element(
+                By.XPATH,
+                ".//a[contains(@href,'facebook.com')]//span"
+            ).text
         except:
-            pass
+            page_name = ""
 
         # -------------------------
         # SPONSORED
@@ -145,14 +141,13 @@ for ad in ads:
         # -------------------------
         # AD TEXT (VERY IMPORTANT FIX)
         # -------------------------
-        ad_text = ""
         try:
             ad_text = ad.find_element(
                 By.XPATH,
-                ".//div[contains(@style,'white-space: pre-wrap')]//span"
+                ".//div[contains(@style,'white-space: pre-wrap')]"
             ).text
         except:
-            pass
+            ad_text = ""
 
         # -------------------------
         # IMAGE (MAIN CREATIVE)
@@ -170,65 +165,26 @@ for ad in ads:
         except:
             pass
 
-        ad_image = ""
-        ad_video = ""
-
+        media_url = ""
         try:
-            # -------------------------
-            # CHECK VIDEO FIRST
-            # -------------------------
-            videos = ad.find_elements(By.XPATH, ".//video")
+            # 🎥 VIDEO FIRST
+            video = ad.find_elements(By.XPATH, ".//video")
 
-            if videos:
-                video_src = videos[0].get_attribute("src")
-
-                if video_src:
-                    ad_video = video_src
-
-                    # ✅ DOWNLOAD VIDEO
-                    filename = f"images/{library_id}.mp4"
-
-                    if not os.path.exists(filename):
-                        response = requests.get(video_src, timeout=15)
-
-                        if response.status_code == 200:
-                            with open(filename, "wb") as f:
-                                f.write(response.content)
-
-                            print(f"🎥 Saved video: {filename}")
+            if video:
+                media_url = video[0].get_attribute("src")
 
             else:
-                # -------------------------
-                # IF NO VIDEO → GET IMAGE
-                # -------------------------
-                imgs = ad.find_elements(By.XPATH, ".//img[contains(@src,'scontent')]")
+                images = ad.find_elements(By.XPATH, ".//img[contains(@src,'scontent')]")
 
-                for im in imgs:
-                    src = im.get_attribute("src")
+                for img in images:
+                    src = img.get_attribute("src")
 
-                    if (
-                        src and
-                        "scontent" in src and
-                        "s60x60" not in src
-                    ):
-                        ad_image = src
-
-                        # ✅ DOWNLOAD IMAGE
-                        filename = f"images/{library_id}.jpg"
-
-                        if not os.path.exists(filename):
-                            response = requests.get(src, timeout=10)
-
-                            if response.status_code == 200:
-                                with open(filename, "wb") as f:
-                                    f.write(response.content)
-
-                                print(f"📸 Saved image: {filename}")
-
+                    if src and "s60x60" not in src:
+                        media_url = src
                         break
 
-        except Exception as e:
-            print("Media error:", e)
+        except:
+            pass
 
         destination_link = ""
         try:
@@ -251,7 +207,7 @@ for ad in ads:
             "page_link": page_link,
             "sponsored": sponsored,
             "ad_text": ad_text,
-            "image_url": ad_image 
+            'media_url': media_url
         })
 
         print(f"✅ {library_id} | {page_name}")
